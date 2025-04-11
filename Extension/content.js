@@ -1,30 +1,74 @@
 var parser = new DOMParser();
 
+var score = new Map();
+var fullScore = new Map();
+
+const storageCache = { count: 0 };
+const initStorageCache = chrome.storage.sync.get().then((items) => {
+  Object.assign(storageCache, items);
+});
+
 (async function() {
+    try {
+        await initStorageCache;
+    } catch {}
+
+    storageCache.count++;
+    chrome.storage.sync.set(storageCache);
+
+    data = await chrome.storage.sync.get(["score", "fullScore"])
+    score = new Map(Object.entries(data.score));
+    fullScore = new Map(Object.entries(data.fullScore));
+
     var elements = document.querySelectorAll(".nav-list li");
+
+    updateSidebar();
+
     for(let i = 2; i + 2 < elements.length; i += 3) {
         try {
-        const taskName = elements[i].textContent.trim();
-        const url = elements[i + 2].getElementsByTagName("a")[0].href;
-        const response = await fetch(url);
-        const htmlContent = await response.text();
-        const parsedHTML = parser.parseFromString(htmlContent, 'text/html');
-        const result = getScore(parsedHTML).split(" / ");
-        const score = parseInt(result[0]);
-        const fullScore = parseInt(result[1]);
-        var element = elements[i];
-        element.innerHTML = `
-            ${taskName}
-            <span style="float:right">
-                <div class="task_score score_${score == fullScore ? '100' : score>0 ? '0_100' : '0'}" style="border-radius:4px; padding-left:4px; padding-right:4px; color:black">
-                    ${score} / ${fullScore}
-                </div>
-            </span>`;
+            const names = elements[i].getElementsByTagName("span");
+            const taskName = (names.length > 0 ? names[0] : elements[i]).textContent.trim();
+            const url = elements[i + 2].getElementsByTagName("a")[0].href;
+            const response = await fetch(url);
+            const htmlContent = await response.text();
+            const parsedHTML = parser.parseFromString(htmlContent, 'text/html');
+            const result = getScore(parsedHTML).split("/");
+            score.set(taskName, parseInt(result[0]));
+            fullScore.set(taskName, parseInt(result[1]));
         } catch {}
     }
+    chrome.storage.sync.set({
+        score: Object.fromEntries(score),
+        fullScore: Object.fromEntries(fullScore)}
+    );
+    updateSidebar();
 })()
+
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if(namespace == "score" && changes?.newValue) updateSidebar();
+});
 
 function getScore(parsedHtml) {
     var element = parsedHtml.getElementsByClassName("task_score_container")[0].getElementsByClassName("score")[0];
     return element.textContent.trim();
+}
+
+function updateSidebar(){
+    var elements = document.querySelectorAll(".nav-list li");
+    for(let i = 2; i + 2 < elements.length; i += 3) {
+        try {
+            var element = elements[i];
+            const taskName = element.textContent.trim();
+            if(!score.has(taskName)) continue;
+            currentScore = score.get(taskName);
+            currentFullScore = fullScore.get(taskName);
+            element.innerHTML = `
+                <span>${taskName}</span>
+                <span style="float:right">
+                    <div class="task_score score_${currentScore == currentFullScore ? '100' : currentScore > 0 ? '0_100' : '0'}" style="border-radius:4px; padding-left:4px; padding-right:4px; color:black">
+                        ${currentScore} / ${currentFullScore}
+                    </div>
+                </span>`;
+        } catch {}
+    }
 }
