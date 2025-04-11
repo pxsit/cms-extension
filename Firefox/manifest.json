@@ -1,0 +1,28 @@
+{
+    "description": "Firefox extension for CMS grader",
+    "manifest_version": 2,
+    "name": "CMSExtension",
+    "version": "1.0",
+    "homepage_url": "https://github.com/ttamx/cms-extension",
+    "icons": {
+        "128": "icons/128.png"
+    },
+    "permissions": [
+        "storage"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "*://toi-coding.informatics.buu.ac.th/*"
+            ],
+            "js": [
+                "content.js"
+            ]
+        }
+    ],
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "ttamx@github.com"
+        }
+    }
+}
