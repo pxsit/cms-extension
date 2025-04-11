@@ -9,6 +9,8 @@ let fullScore = new Map();
 (async function () {
     if (!user) return;
 
+    updateUIDark();
+
     const storageCache = { count: 0 };
     try {
         const items = await browser.storage.sync.get();
@@ -64,6 +66,30 @@ let fullScore = new Map();
     browser.storage.sync.set(object);
 })();
 
+function updateUIDark() {
+    document.body.style.background = "oklch(26.9% 0 0)";
+    document.body.style.color = "white";
+    document.querySelectorAll('table.table-striped').forEach(table => {
+        table.classList.remove('table-striped');
+    });
+    document.querySelectorAll('#countdown').forEach(span => {
+        span.style.color = "white";
+    });
+    document.querySelectorAll('#server_time').forEach(span => {
+        span.style.color = "white";
+    });
+    document.querySelectorAll('.well').forEach(well => {
+        well.style.background = "oklch(43.9% 0 0)";
+        well.style.color = "white";
+    });
+    document.querySelectorAll('.nav li').forEach(li => {
+        li.style.color = "oklch(80.9% 0.105 251.813)";
+    });
+    document.querySelectorAll('.nav-header').forEach(header => {
+        header.style.color = "white";
+    });
+}
+
 function getScore(parsedHtml) {
     const element = parsedHtml.querySelector(".task_score_container .score");
     return element ? element.textContent.trim() : "0/0";
@@ -85,7 +111,7 @@ function updateSidebar() {
                 <span style="float:right">
                     <div
                         class="task_score score_${currentScore == currentFullScore ? '100' : currentScore > 0 ? '0_100' : '0'}"
-                        style="border-radius:4px; padding-left:4px; padding-right:4px; color:black"
+                        style="border-radius:4px; padding-left:4px; padding-right:4px; color:white"
                     >
                         ${currentScore} / ${currentFullScore}
                     </div>
