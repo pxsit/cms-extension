@@ -1,17 +1,21 @@
 {
-    "manifest_version": 3,
-    "name": "CMS Extension",
-    "version": "1.0",
-    "description": "Extension for CMS",
-    "permissions": ["activeTab","storage"],
-    "action":{
-      "default_icon": "icon.png"
-    },
-    "content_scripts": [
-      {
-        "matches": ["https://c2.thailandoi.org/*","https://toi-coding.informatics.buu.ac.th/*"],
-        "js": ["content.js"],
-        "run_at": "document_idle"
-      }
-    ]
-  }
+  "manifest_version": 3,
+  "name": "CMS Extension",
+  "version": "1.1",
+  "description": "Extension for CMS",
+  "permissions": ["activeTab", "storage"],
+  "action": {
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "css": ["style.css"],
+      "matches": [
+        "https://c2.thailandoi.org/*",
+        "https://toi-coding.informatics.buu.ac.th/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
