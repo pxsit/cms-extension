@@ -200,7 +200,7 @@ async function refreshSingleTask(url, task) {
     }
   }
   if (!taskElement) {
-    // console.log("Element not found for task:", task);
+    console.error(`Element not found for task ${task}`);
     return;
   }
   try {
@@ -229,7 +229,7 @@ function createControls() {
   refreshButton.textContent = "↻ Refresh Scores";
   refreshButton.addEventListener("click", () =>
     withButtonDisabled(async () => {
-      const url = window.location.href;
+      const url = window.location.href.split("?")[0];
       if (url.includes("/tasks/") && url.endsWith("/submissions")) {
         const task = url.split("/tasks/")[1]?.split("/")[0];
         await refreshSingleTask(url, task);
@@ -253,10 +253,9 @@ function setupSubmissionListener() {
         setTimeout(
           () =>
             withButtonDisabled(async () => {
-              const task = window.location.href
-                .split("/tasks/")[1]
-                ?.split("/")[0];
-              await refreshSingleTask(window.location.href, task);
+              const url = window.location.href.split("?")[0];
+              const task = url.split("/tasks/")[1]?.split("/")[0];
+              await refreshSingleTask(url, task);
             }),
           12000
         );
@@ -265,7 +264,6 @@ function setupSubmissionListener() {
     const observer = new MutationObserver((mutations) => {
       let shouldRefresh = true;
       for (const mutation of mutations) {
-        // console.log('mutation found');
         if (
           mutation.type === "childList" ||
           mutation.type === "characterData"
@@ -306,7 +304,9 @@ function setupSubmissionListener() {
         // console.log('Score update detected by observer');
         setTimeout(() =>
           withButtonDisabled(async () => {
-            await refreshSingleTask(window.location.href);
+            const url = window.location.href.split("?")[0];
+            const task = url.split("/tasks/")[1]?.split("/")[0];
+            await refreshSingleTask(url, task);
           }, 500)
         );
       }
