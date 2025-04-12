@@ -1,8 +1,8 @@
 .cms-score-badge {
-	border-radius:4px;
-	padding-left:4px;
-	padding-right:4px;
-	color:black;
+  border-radius: 4px;
+  padding-left: 4px;
+  padding-right: 4px;
+  color: black;
 }
 .cms-extension-controls {
   position: fixed;
