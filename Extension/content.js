@@ -88,24 +88,25 @@ function updateTotalScore() {
 
 async function fetchAllScore(elements, force = false) {
   const promises = [];
-  for (let i = 2; i + 2 < elements.length; i += 3) {
-    try {
-      const names = elements[i].getElementsByTagName("span");
-      const task = (
-        names.length > 0 ? names[0] : elements[i]
-      ).textContent.trim();
-      const url = elements[i + 2].getElementsByTagName("a")[0].href;
-      if (force) {
-        if (responseCache.has(task)) {
-          responseCache.delete(task);
-          // console.log(`Cache invalidated for: ${task}`);
-        }
+  Array.from(elements).forEach((element, i) => {
+    if (element.classList.contains("nav-header")) {
+      try {
+        const task = (element.querySelector("span") || element).textContent.trim();
+        const url = elements[i + 2]?.querySelector("a")?.href;
+				if(url){
+					if (force) {
+						if (responseCache.has(task)) {
+							responseCache.delete(task);
+							// console.log(`Cache invalidated for: ${task}`);
+						}
+					}
+					promises.push(fetchAndParseTask(url, task));
+				}
+      } catch (e) {
+        console.error("Error fetching task:", e);
       }
-      promises.push(fetchAndParseTask(url, task));
-    } catch (e) {
-      console.error("Error fetching task:", e);
     }
-  }
+  });
   const results = await Promise.allSettled(promises);
   results.forEach((result, index) => {
     if (result.status === "fulfilled" && result.value) {
@@ -182,23 +183,19 @@ async function refreshSingleTask(url, task) {
     //   console.log(`Cache invalidated for: ${task}`);
   }
   const elements = document.querySelectorAll(".nav-list li");
-  let taskElement = null;
-
-  for (let i = 2; i + 2 < elements.length; i += 3) {
-    try {
-      const names = elements[i].getElementsByTagName("span");
-      const taskName = (
-        names.length > 0 ? names[0] : elements[i]
-      ).textContent.trim();
-      const taskUrl = elements[i + 2].getElementsByTagName("a")[0]?.href;
-      if (task == taskName && url === taskUrl) {
-        taskElement = elements[i];
-        break;
-      }
-    } catch (e) {
-      console.error("Error finding task:", e);
-    }
-  }
+  const taskElement = Array.from(elements).find((element, i) => {
+		if (!element.classList.contains("nav-header")) return false;
+	
+		try {
+			const taskName = (element.querySelector("span") || element).textContent.trim();
+			const taskUrl = elements[i + 2]?.querySelector("a")?.href;
+	
+			return taskName === task && taskUrl === url;
+		} catch (e) {
+			console.error("Error finding task:", e);
+			return false;
+		}
+	});
   if (!taskElement) {
     console.error(`Element not found for task ${task}`);
     return;
@@ -356,8 +353,7 @@ function getScore(parsedHtml) {
 
 function updateSidebarElement(element) {
   try {
-    const names = element.getElementsByTagName("span");
-    const task = (names.length > 0 ? names[0] : element).textContent.trim();
+    const task = (element.querySelector("span") || element).textContent.trim();
     if (!score.has(task)) return;
     const currentScore = score.get(task);
     const currentFullScore = fullScore.get(task);
@@ -388,7 +384,9 @@ function updateSidebarElement(element) {
 
 function updateSidebar() {
   const elements = document.querySelectorAll(".nav-list li");
-  for (let i = 2; i + 2 < elements.length; i += 3) {
-    updateSidebarElement(elements[i]);
-  }
+  Array.from(elements).forEach((element, i) => {
+    if (element.classList.contains("nav-header")) {
+      updateSidebarElement(elements[i]);
+    }
+  });
 }
