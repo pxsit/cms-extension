@@ -1,57 +1,61 @@
+// Config
+
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// ===
+
 const baseURL = window.location.href.split(/(\/tasks)|(\/communication)|(\/documentation)|(\/testing)/)[0].replace(/\/+$/g, '');
 const user = document.querySelector("em")?.textContent;
 
 function isCMSPage() {
-    const hasCMSNavigation = document.querySelector(".nav-list") !== null;
-    const hasCMSHeader = document.querySelector(".navbar") !== null;
-    const hasUserElement = document.querySelector("em") !== null;
-    const hasTaskElements = document.querySelector(".task_score_container") !== null || document.querySelector("#task-statement") !== null;
-    return (hasCMSNavigation && hasUserElement) || (hasCMSHeader && hasUserElement) || hasTaskElements;
+    const hasCMSHeader = !!document.querySelector(".navbar");
+    const hasUserElement = !!document.querySelector("em");
+    return hasCMSHeader && hasUserElement;
 }
 
-var parser = new DOMParser();
+const parser = new DOMParser();
 
-var score = new Map();
-var fullScore = new Map();
-const responseCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-const style = document.createElement('style');
-style.textContent = `
-  .cms-extension-controls {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .refresh-button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
-  .refresh-button:hover {
-    background-color: #45a049;
-  }
-  .refresh-button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-  }
-  .total-score-container {
-    background-color: #f0f0f0;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    font-weight: bold;
-  }
-`;
-document.head.appendChild(style);
+let score = new Map();
+let fullScore = new Map();
+let responseCache = new Map();
+
+async function loadStorageCache(){
+    const storageCache = { count: 0 };
+    try {
+		const items = await chrome.storage.local.get();
+		Object.assign(storageCache, items);
+    } catch (e) {
+        console.error('Error retrieving storage data');
+    }
+    
+    storageCache.count++;
+    chrome.storage.local.set(storageCache);
+
+    const responseCacheKey = `${baseURL}_${user}_responseCache`;
+
+    const data = await chrome.storage.local.get([responseCacheKey]);
+
+    if(data[responseCacheKey]) {
+		responseCache = new Map(Object.entries(data[responseCacheKey]));
+		responseCache.forEach((value, key) => {
+			score.set(key, value.score);
+			fullScore.set(key, value.fullScore);
+		})
+	}
+}
+
+async function storeStorageCache(){
+    const responseCacheKey = `${baseURL}_${user}_responseCache`;
+
+    const object = new Object();
+    object[responseCacheKey] = Object.fromEntries(responseCache);
+
+	try {
+    	await chrome.storage.local.set(object);
+	} catch (e) {
+		console.error("Failed to store data:", e);
+	}
+}
 
 function calculateTotalScore() {
     let totalScore = 0;
@@ -68,7 +72,7 @@ function calculateTotalScore() {
     return { totalScore, totalFullScore };
 }
 
-function updateDisplay() {
+function updateTotalScore() {
     const { totalScore, totalFullScore } = calculateTotalScore();
     const totalScoreElement = document.getElementById('cms-extension-total-score');
     if (totalScoreElement) {
@@ -79,20 +83,18 @@ function updateDisplay() {
 
 async function fetchAllScore(elements, force = false) {
     const promises = [];
-    const data = [];
     for(let i = 2; i + 2 < elements.length; i += 3) {
         try {
             const names = elements[i].getElementsByTagName("span");
             const task = (names.length > 0 ? names[0] : elements[i]).textContent.trim();
             const url = elements[i + 2].getElementsByTagName("a")[0].href;
-            if (force) {
-                if (url && responseCache.has(url)) {
-                    responseCache.delete(url);
-                    console.log(`Cache invalidated for: ${url}`);
-                }
-            }
-            data.push({ task, url, index: promises.length });
-            promises.push(fetchAndParseTask(url, task));
+			if (force) {
+				if (responseCache.has(task)) {
+					responseCache.delete(task);
+					console.log(`Cache invalidated for: ${task}`);
+				}
+			}
+			promises.push(fetchAndParseTask(url, task));
         } catch (e) {
             console.error("Error fetching task:", e);
         }
@@ -109,24 +111,27 @@ async function fetchAllScore(elements, force = false) {
 }
 
 async function fetchAndParseTask(url, task) {
+	if(!url) return null;
     try {
         const now = Date.now();
-        const cachedResponse = responseCache.get(url);
-        let htmlContent;
+        const cachedResponse = responseCache.get(task);
+        let scoreValue, fullScoreValue;
         if (cachedResponse && (now - cachedResponse.timestamp) < CACHE_TTL) {
-            htmlContent = cachedResponse.data;
+            scoreValue = cachedResponse.score;
+            fullScoreValue = cachedResponse.fullScore;
         } else {
             const response = await fetch(url, { cache: 'no-store' });
-            htmlContent = await response.text();
-            responseCache.set(url, { 
-                data: htmlContent, 
+            const htmlContent = await response.text();
+            const parsedHTML = parser.parseFromString(htmlContent, 'text/html');
+            const result = getScore(parsedHTML).split("/").map(val => parseInt(val, 10));
+			scoreValue = result[0];
+			fullScoreValue = result[1];
+            responseCache.set(task, { 
+                score: scoreValue,
+				fullScore: fullScoreValue,
                 timestamp: now 
             });
         }
-        const parsedHTML = parser.parseFromString(htmlContent, 'text/html');
-        const scoreText = getScore(parsedHTML);
-        const [scoreValue, fullScoreValue] = scoreText.split("/").map(val => parseInt(val, 10));
-        
         return { task, scoreValue, fullScoreValue };
     } catch (e) {
         console.error(`Error fetching task ${task}:`, e);
@@ -134,90 +139,68 @@ async function fetchAndParseTask(url, task) {
     }
 }
 
-async function refreshScores(force = true) {
-    if(!user) return;
-    
-    const refreshButton = document.querySelector('.refresh-button');
-    if (refreshButton) {
-        refreshButton.disabled = true;
-        refreshButton.textContent = 'Refreshing...';
+async function withButtonDisabled(asyncFn) {
+    const button = document.querySelector('.refresh-button');
+    if (!button) return;
+
+	button.disabled = true;
+	button.textContent = 'Refreshing...';
+
+    try {
+        await asyncFn();
+    } catch (e) {
+        console.error('Error during button action:', e);
     }
-    
-    const scoreKey = `${baseURL}_${user}_score`;
-    const fullScoreKey = `${baseURL}_${user}_fullScore`;
+
+	button.disabled = false;
+	button.textContent = '↻ Refresh Scores';
+}
+
+async function refreshScores(force = true) {
     const elements = document.querySelectorAll(".nav-list li");
     await fetchAllScore(elements, force);
     updateSidebar();
-    updateDisplay();
-    const object = new Object();
-    object[scoreKey] = Object.fromEntries(score);
-    object[fullScoreKey] = Object.fromEntries(fullScore);
-    await chrome.storage.sync.set(object);
-    if (refreshButton) {
-        refreshButton.disabled = false;
-        refreshButton.textContent = '↻ Refresh Scores';
-    }
+    updateTotalScore();
+
+    await storeStorageCache();
 }
 
-async function refreshSingleTask(taskUrl) {
-    if (!taskUrl || !user) return;
-    console.log(`Refreshing task at URL: ${taskUrl}`);
-    if (taskUrl && responseCache.has(taskUrl)) {
-      responseCache.delete(taskUrl);
-      console.log(`Cache invalidated for: ${taskUrl}`);
+async function refreshSingleTask(url, task) {
+    if (!url) return;
+    console.log(`Refreshing task at URL: ${url}`);
+    if (responseCache.has(task)) {
+      responseCache.delete(task);
+      console.log(`Cache invalidated for: ${task}`);
     }
     const elements = document.querySelectorAll(".nav-list li");
-    let task = null;
     let taskElement = null;
     
     for(let i = 2; i + 2 < elements.length; i += 3) {
         try {
-            const link = elements[i + 2].getElementsByTagName("a")[0];
-            if (link && link.href === taskUrl) {
-                const names = elements[i].getElementsByTagName("span");
+			const names = elements[i].getElementsByTagName("span");
+			const taskName = (names.length > 0 ? names[0] : elements[i]).textContent.trim();
+            const taskUrl = elements[i + 2].getElementsByTagName("a")[0]?.href;
+            if (task == taskName && url === taskUrl) {
                 taskElement = elements[i];
-                task = (names.length > 0 ? names[0] : elements[i]).textContent.trim();
                 break;
             }
         } catch (e) {
             console.error("Error finding task:", e);
         }
     }
-    if (!task) {
-        console.log("Task not found for URL:", taskUrl);
+    if (!taskElement) {
+        console.log("Element not found for task:", task);
         return;
     }
     try {
-        const result = await fetchAndParseTask(taskUrl, task);
+        const result = await fetchAndParseTask(url, task);
         if (result) {
             const { scoreValue, fullScoreValue } = result;
             score.set(task, scoreValue);
             fullScore.set(task, fullScoreValue);
-            if (taskElement) {
-                taskElement.innerHTML = `
-                    <span>
-                        ${task}
-                    </span>
-                    <span style="float:right">
-                        <div
-                            class="task_score score_${scoreValue == fullScoreValue ? '100' : scoreValue > 0 ? '0_100' : '0'}"
-                            style="border-radius:4px; padding-left:4px; padding-right:4px; color:black"
-                        >
-                            ${scoreValue} / ${fullScoreValue}
-                        </div>
-                    </span>`;
-                console.log(`Updated sidebar for ${task}`);
-            } else {
-                updateSidebar();
-            }
-            updateDisplay();
-            const scoreKey = `${baseURL}_${user}_score`;
-            const fullScoreKey = `${baseURL}_${user}_fullScore`;
-            const object = new Object();
-            object[scoreKey] = Object.fromEntries(score);
-            object[fullScoreKey] = Object.fromEntries(fullScore);
-            await chrome.storage.sync.set(object);
-            console.log(`Updated score for ${task}: ${scoreValue}/${fullScoreValue}`);
+			updateSidebarElement(taskElement);
+            updateTotalScore();
+			await storeStorageCache();
         }
     } catch (e) {
         console.error(`Error updating single task ${task}:`, e);
@@ -233,18 +216,20 @@ function createControls() {
     const refreshButton = document.createElement('button');
     refreshButton.className = 'refresh-button';
     refreshButton.textContent = '↻ Refresh Scores';
-    refreshButton.addEventListener('click', async () => {
-        refreshButton.disabled = true;
-        refreshButton.textContent = 'Refreshing...';
-        await refreshScores(true); 
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
-    });
+    refreshButton.addEventListener('click', () => 
+		withButtonDisabled(async () => {
+			const url = window.location.href;
+			if (url.includes("/tasks/") && url.endsWith("/submissions")) {
+				const task = url.split("/tasks/")[1]?.split("/")[0];
+				await refreshSingleTask(url, task);
+			} else {
+				await refreshScores(true); 
+			}
+    }));
     controlsContainer.appendChild(totalScoreContainer);
     controlsContainer.appendChild(refreshButton);
     document.body.appendChild(controlsContainer);
-    updateDisplay();
+    updateTotalScore();
 }
 
 function setupSubmissionListener() {
@@ -253,30 +238,29 @@ function setupSubmissionListener() {
         document.addEventListener('submit', async (event) => {
             if (event.target.matches('form')) {
                 console.log('Form submission detected');
-                        setTimeout(async () => {
-                          await refreshSingleTask(window.location.href);
-                          window.location.reload();
-                        }, 12000);
+				setTimeout(() => withButtonDisabled(async () => {
+					const task = window.location.href.split("/tasks/")[1]?.split("/")[0];
+					await refreshSingleTask(window.location.href, task);
+				}), 12000);
             }
         });
         const observer = new MutationObserver((mutations) => {
-            let shouldRefresh = false;
+			let shouldRefresh = true;
             for (const mutation of mutations) {
+				console.log('mutation found');
                 if (mutation.type === 'childList' || mutation.type === 'characterData') {
-                    let element = mutation.target;
+                    let element = mutation.target instanceof Node ? mutation.target.parentElement : null;
                     while (element) {
                         if (element.classList && 
                            (element.classList.contains('task_score_container') ||
-                            element.classList.contains('score') ||
-                            element.classList.contains('submission_result'))) {
+                            element.classList.contains('score'))) {
                             shouldRefresh = true;
                             break;
                         }
                         element = element.parentElement;
                     }
-                    if (mutation.addedNodes && mutation.addedNodes.length) {
-                        for (let i = 0; i < mutation.addedNodes.length; i++) {
-                            const node = mutation.addedNodes[i];
+                    if (!shouldRefresh && mutation.addedNodes?.length) {
+						for (const node of mutation.addedNodes) {
                             if (node.nodeType === Node.ELEMENT_NODE && 
                                 (node.classList.contains('task_score_container') ||
                                  node.classList.contains('score') ||
@@ -292,18 +276,14 @@ function setupSubmissionListener() {
             }
             if (shouldRefresh) {
                 console.log('Score update detected by observer');
-                setTimeout(async () => {
-                  await refreshSingleTask(window.location.href);
-                  window.location.reload();
-                }, 500);
+                setTimeout(() => withButtonDisabled(async () => {
+                  	await refreshSingleTask(window.location.href);
+                }, 500));
             }
         });
         setTimeout(() => {
             const scoreContainer = document.querySelector('.task_score_container');
-            const taskContent = document.querySelector('#task-statement') || 
-                               document.querySelector('.task-statement') ||
-                               document.querySelector('.content');
-            
+
             if (scoreContainer) {
                 observer.observe(scoreContainer, { 
                     childList: true, 
@@ -312,19 +292,6 @@ function setupSubmissionListener() {
                 });
                 console.log('Observer attached to score container');
             }
-            if (taskContent) {
-                observer.observe(taskContent, {
-                    childList: true,
-                    subtree: true,
-                    characterData: true
-                });
-                console.log('Observer attached to task content');
-            }
-            observer.observe(document.body, {
-                childList: true,
-                subtree: false
-            });
-            console.log('Observer attached to body');
         }, 1000);
     }
 }
@@ -335,60 +302,57 @@ function setupSubmissionListener() {
         return;
     }
     if(!user) return;
-    const storageCache = { count: 0 };
-    try {
-        await chrome.storage.sync.get().then((items) => {
-            Object.assign(storageCache, items);
-        });
-    } catch {
-        console.error('Error retrieving storage data');
-    }
-    storageCache.count++;
-    chrome.storage.sync.set(storageCache);
-    const scoreKey = `${baseURL}_${user}_score`;
-    const fullScoreKey = `${baseURL}_${user}_fullScore`;
-    data = await chrome.storage.sync.get([scoreKey, fullScoreKey]);
-    if(data[scoreKey]) score = new Map(Object.entries(data[scoreKey]));
-    if(data[fullScoreKey]) fullScore = new Map(Object.entries(data[fullScoreKey]));
+
+    await loadStorageCache();
+
     const elements = document.querySelectorAll(".nav-list li");
     updateSidebar();
     createControls();
+
     await fetchAllScore(elements);
-    updateDisplay();
-    updateSidebar();    
+
+    updateSidebar();
+    updateTotalScore();
+    
+    await storeStorageCache();
+
     setupSubmissionListener();
-    const object = new Object();
-    object[scoreKey] = Object.fromEntries(score);
-    object[fullScoreKey] = Object.fromEntries(fullScore);
-    chrome.storage.sync.set(object);
 })();
 
 function getScore(parsedHtml) {
-    const element = parsedHtml.getElementsByClassName("task_score_container")[0].getElementsByClassName("score")[0];
-    return element.textContent.trim();
+    const element = parsedHtml.querySelector(".task_score_container .score");
+    return element ? element.textContent.trim() : "0/0";
+}
+
+function updateSidebarElement(element){
+	try {
+		const names = element.getElementsByTagName("span");
+		const task = (names.length > 0 ? names[0] : element).textContent.trim();
+		if(!score.has(task)) return;
+		const currentScore = score.get(task);
+		const currentFullScore = fullScore.get(task);
+		element.innerHTML = `
+			<span>
+				${task}
+			</span>
+			<span style="float:right">
+				<div
+					class="
+						cms-score-badge
+						task_score
+						score_${currentScore == currentFullScore ? '100' : currentScore > 0 ? '0_100' : '0'}
+				">
+					${currentScore} / ${currentFullScore}
+				</div>
+			</span>`;
+	} catch (e) {
+        console.error(`Error updating task element ${element.innerHTML}:`, e);
+	}
 }
 
 function updateSidebar(){
-    var elements = document.querySelectorAll(".nav-list li");
+    const elements = document.querySelectorAll(".nav-list li");
     for(let i = 2; i + 2 < elements.length; i += 3) {
-        try {
-            var element = elements[i];
-            const task = element.textContent.trim();
-            if(!score.has(task)) continue;
-            currentScore = score.get(task);
-            currentFullScore = fullScore.get(task);
-            element.innerHTML = `
-                <span>
-                    ${task}
-                </span>
-                <span style="float:right">
-                    <div
-                        class="task_score score_${currentScore == currentFullScore ? '100' : currentScore > 0 ? '0_100' : '0'}"
-                        style="border-radius:4px; padding-left:4px; padding-right:4px; color:black"
-                    >
-                        ${currentScore} / ${currentFullScore}
-                    </div>
-                </span>`;
-        } catch {}
+        updateSidebarElement(elements[i]);
     }
 }
