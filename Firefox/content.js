@@ -72,10 +72,7 @@ function updateUIDark() {
     document.querySelectorAll('table.table-striped').forEach(table => {
         table.classList.remove('table-striped');
     });
-    document.querySelectorAll('#countdown').forEach(span => {
-        span.style.color = "white";
-    });
-    document.querySelectorAll('#server_time').forEach(span => {
+    document.querySelectorAll('#countdown, #server_time').forEach(span => {
         span.style.color = "white";
     });
     document.querySelectorAll('.well').forEach(well => {
@@ -88,7 +85,38 @@ function updateUIDark() {
     document.querySelectorAll('.nav-header').forEach(header => {
         header.style.color = "white";
     });
+    document.querySelectorAll('code').forEach(code => {
+        code.style.background = "oklch(43.9% 0 0)";
+        code.style.color = "pink";
+    });
+    updateSubmissionDetailDark();
 }
+
+function updateSubmissionDetailDark() {
+    const modal = document.getElementById('submission_detail');
+    if (modal) {
+        modal.style.background = "oklch(26.9% 0 0)";
+        modal.querySelectorAll('.score_details table.table-striped').forEach(table => {
+            table.classList.remove('table-striped');
+        });
+        modal.querySelectorAll('pre').forEach(pre => {
+            pre.style.background = "oklch(43.9% 0 0)";
+            pre.style.color = "pink";
+        });
+        modal.querySelectorAll('.modal-footer').forEach(footer => {
+            footer.style.background = "oklch(26.9% 0 0)";
+        });
+    }
+}
+
+const observer = new MutationObserver(() => {
+    const modal = document.getElementById('submission_detail');
+    if (modal && getComputedStyle(modal).display === 'block') {
+        updateSubmissionDetailDark();
+    }
+});
+
+observer.observe(document.body, { attributes: true, childList: true, subtree: true });
 
 function getScore(parsedHtml) {
     const element = parsedHtml.querySelector(".task_score_container .score");
