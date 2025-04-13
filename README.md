@@ -1,13 +1,13 @@
 # CMS Extension
 
-Chrome extension for CMS grader.
+Extension for CMS grader.
 
 # How to install
 ## Chrome
 1. Clone this repository (or just click [here](https://github.com/ttamx/cms-extension/archive/refs/heads/main.zip) and unzip).
 2. Go to `chrome://extensions/` (You can copy and paste this link in your browser).
 3. Enable developer mode on the top right corner.
-4. Click Load unpacked and select the `Extension` folder.
+4. Click Load unpacked and select the `Chrome` folder.
 5. Done!
 ## Firefox
 1. Clone this repository and zip all items in `Firefox` folder.

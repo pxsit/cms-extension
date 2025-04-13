@@ -91,17 +91,19 @@ async function fetchAllScore(elements, force = false) {
   Array.from(elements).forEach((element, i) => {
     if (element.classList.contains("nav-header")) {
       try {
-        const task = (element.querySelector("span") || element).textContent.trim();
+        const task = (
+          element.querySelector("span") || element
+        ).textContent.trim();
         const url = elements[i + 2]?.querySelector("a")?.href;
-				if(url){
-					if (force) {
-						if (responseCache.has(task)) {
-							responseCache.delete(task);
-							// console.log(`Cache invalidated for: ${task}`);
-						}
-					}
-					promises.push(fetchAndParseTask(url, task));
-				}
+        if (url) {
+          if (force) {
+            if (responseCache.has(task)) {
+              responseCache.delete(task);
+              // console.log(`Cache invalidated for: ${task}`);
+            }
+          }
+          promises.push(fetchAndParseTask(url, task));
+        }
       } catch (e) {
         console.error("Error fetching task:", e);
       }
@@ -184,18 +186,20 @@ async function refreshSingleTask(url, task) {
   }
   const elements = document.querySelectorAll(".nav-list li");
   const taskElement = Array.from(elements).find((element, i) => {
-		if (!element.classList.contains("nav-header")) return false;
-	
-		try {
-			const taskName = (element.querySelector("span") || element).textContent.trim();
-			const taskUrl = elements[i + 2]?.querySelector("a")?.href;
-	
-			return taskName === task && taskUrl === url;
-		} catch (e) {
-			console.error("Error finding task:", e);
-			return false;
-		}
-	});
+    if (!element.classList.contains("nav-header")) return false;
+
+    try {
+      const taskName = (
+        element.querySelector("span") || element
+      ).textContent.trim();
+      const taskUrl = elements[i + 2]?.querySelector("a")?.href;
+
+      return taskName === task && taskUrl === url;
+    } catch (e) {
+      console.error("Error finding task:", e);
+      return false;
+    }
+  });
   if (!taskElement) {
     console.error(`Element not found for task ${task}`);
     return;
