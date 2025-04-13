@@ -8,11 +8,16 @@
         "128": "icons/128.png"
     },
     "permissions": [
+        "activeTab",
         "storage"
     ],
     "content_scripts": [
         {
+            "css": [
+                "style.css"
+            ],
             "matches": [
+                "*://c2.thailandoi.org/*",
                 "*://toi-coding.informatics.buu.ac.th/*"
             ],
             "js": [
