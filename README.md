@@ -15,5 +15,5 @@ Extension for CMS grader.
 5. Done!
 ## Firefox
 1. Install the extention from [The Firefox Marketplace](https://addons.mozilla.org/en-US/firefox/addon/cms-extension/)
-2. Done
+2. Done!
 > 
