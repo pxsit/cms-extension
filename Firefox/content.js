@@ -327,70 +327,6 @@ function setupSubmissionListener() {
   }
 }
 
-// --- TOI Pre‑TOI overview box) ---
-function parseScore(scoreText) {
-  const match = scoreText.match(/(\d+)\s*\/\s*(\d+)/);
-  if (!match) return 0;
-  return parseInt(match[1], 10);
-}
-
-function analyzeTasks() {
-  const rows = document.querySelectorAll("table tbody tr");
-  let a1 = 0, a2 = 0, a3 = 0;
-  rows.forEach(row => {
-    const [scoreCell, taskCell] = row.children;
-    if (!scoreCell || !taskCell) return;
-    const score = parseScore(scoreCell.textContent);
-    const group = taskCell.textContent.trim().split("-")[0];
-    if (score >= 80) {
-      if (group === "A1") a1++;
-      else if (group === "A2") a2++;
-      else if (group === "A3") a3++;
-    }
-  });
-  return { a1, a2, a3 };
-}
-
-function createScoreBox(a1, a2, a3) {
-  const container = document.createElement("div");
-  container.style.padding = "12px";
-  container.style.marginBottom = "20px";
-  container.style.fontSize = "16px";
-  container.style.fontWeight = "bold";
-  container.style.backgroundColor = "#fff";
-  container.style.color = "#000";
-  container.style.width = "100%";
-  const totalA2A3 = a2 + a3;
-  const totalAll = a1 + totalA2A3;
-  container.innerHTML = `
-  A1: ${a1} ข้อ<br> 
-  A2: ${a2} ข้อ<br> 
-  A3: ${a3} ข้อ<br> 
-  ${totalAll >= 40 ? '✅' : '❌'} รวมทกข้อ : ${totalAll} ข้อ <br>
-  ${totalA2A3 >= 20 ? '✅' : '❌'} รวม A2+A3 : ${totalA2A3} ข้อ <br>
-  ${(totalAll >= 40 && totalA2A3 >= 20)? '✅<span style="color: green;"> ผ่านเกณฑ์</span>' : '❌<span style="color: red;"> ไม่ผ่านเกณฑ์</span>'}<br>
-  `;
-  return container;
-}
-
-function insertScoreBoxTOI() {
-  const { a1, a2, a3 } = analyzeTasks();
-  const overviewHeader = Array.from(
-    document.querySelectorAll("h2")
-  ).find(h => h.textContent.includes("Task overview"));
-  if (overviewHeader) {
-    const box = createScoreBox(a1, a2, a3);
-    overviewHeader.parentElement.insertBefore(box, overviewHeader.nextSibling);
-  }
-}
-if (
-  window.location.href.startsWith(
-    "https://toi-coding.informatics.buu.ac.th/00-pre-toi"
-  )
-) {
-  window.addEventListener("load", () => setTimeout(insertScoreBoxTOI, 500));
-}
-
 (async function () {
   if (!isCMSPage()) {
     // console.log("Not a CMS page, CMS extension has been disabled");
@@ -423,28 +359,28 @@ function updateSidebarElement(element) {
   try {
     const task = (element.querySelector("span") || element).textContent.trim();
     if (!score.has(task)) return;
+
     const currentScore = score.get(task);
     const currentFullScore = fullScore.get(task);
-    element.innerHTML = `
-			<span>
-				${task}
-			</span>
-			<span style="float:right">
-				<div
-					class="
-						cms-score-badge
-						task_score
-						score_${
-              currentScore == currentFullScore
-                ? "100"
-                : currentScore > 0
-                ? "0_100"
-                : "0"
-            }
-				">
-					${currentScore} / ${currentFullScore}
-				</div>
-			</span>`;
+    element.textContent = "";
+    const taskSpan = document.createElement("span");
+    taskSpan.textContent = task;
+    const scoreContainer = document.createElement("span");
+    scoreContainer.style.float = "right";
+
+    const scoreBadge = document.createElement("div");
+    scoreBadge.className = `cms-score-badge task_score score_${
+      currentScore == currentFullScore
+        ? "100"
+        : currentScore > 0
+        ? "0_100"
+        : "0"
+    }`;
+    scoreBadge.textContent = `${currentScore} / ${currentFullScore}`;
+
+    scoreContainer.appendChild(scoreBadge);
+    element.appendChild(taskSpan);
+    element.appendChild(scoreContainer);
   } catch (e) {
     console.error(`Error updating task element ${element.innerHTML}:`, e);
   }
