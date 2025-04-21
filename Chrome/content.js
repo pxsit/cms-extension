@@ -423,28 +423,32 @@ function updateSidebarElement(element) {
   try {
     const task = (element.querySelector("span") || element).textContent.trim();
     if (!score.has(task)) return;
+
     const currentScore = score.get(task);
     const currentFullScore = fullScore.get(task);
-    element.innerHTML = `
-			<span>
-				${task}
-			</span>
-			<span style="float:right">
-				<div
-					class="
-						cms-score-badge
-						task_score
-						score_${
-              currentScore == currentFullScore
-                ? "100"
-                : currentScore > 0
-                ? "0_100"
-                : "0"
-            }
-				">
-					${currentScore} / ${currentFullScore}
-				</div>
-			</span>`;
+
+    element.textContent = "";
+
+    const taskSpan = document.createElement("span");
+    taskSpan.textContent = task;
+
+    const scoreContainer = document.createElement("span");
+    scoreContainer.style.float = "right";
+
+    const scoreBadge = document.createElement("div");
+    scoreBadge.className = `cms-score-badge task_score score_${
+      currentScore == currentFullScore
+        ? "100"
+        : currentScore > 0
+        ? "0_100"
+        : "0"
+    }`;
+    scoreBadge.textContent = `${currentScore} / ${currentFullScore}`;
+
+    scoreContainer.appendChild(scoreBadge);
+
+    element.appendChild(taskSpan);
+    element.appendChild(scoreContainer);
   } catch (e) {
     console.error(`Error updating task element ${element.innerHTML}:`, e);
   }
