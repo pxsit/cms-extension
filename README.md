@@ -19,6 +19,6 @@ Extension for CMS grader.
 > 
 
 # Credit
-Teetat Thamronglak - For starting this project
-Pasit Sangprachathanarak - For the total score counter and request optimization
-Arnan Maipradit - For the counter on the home page and for the pdf download and submission button
+Teetat Thamronglak - For starting this project.
+Pasit Sangprachathanarak - For the total score counter and request optimization.
+Arnan Maipradit - For the counter on the home page and for the pdf download and submission button.
