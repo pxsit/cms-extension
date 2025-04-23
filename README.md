@@ -4,7 +4,7 @@ Extension for CMS grader.
 
 # Preview
 
-![image](https://github.com/user-attachments/assets/549106f7-dd68-46ff-8129-9815593923e3)
+![image](![image](https://github.com/user-attachments/assets/bfa0f0a8-f303-4cc8-b3c1-8487e14935e3))
 
 # How to install
 ## Chrome
