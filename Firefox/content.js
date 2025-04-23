@@ -24,18 +24,18 @@ let responseCache = new Map();
 async function loadStorageCache() {
   const storageCache = { count: 0 };
   try {
-    const items = await browser.storage.local.get();
+    const items = await chrome.storage.local.get();
     Object.assign(storageCache, items);
   } catch (e) {
     console.error("Error retrieving storage data");
   }
 
   storageCache.count++;
-  browser.storage.local.set(storageCache);
+  chrome.storage.local.set(storageCache);
 
   const responseCacheKey = `${baseURL}_${user}_responseCache`;
 
-  const data = await browser.storage.local.get([responseCacheKey]);
+  const data = await chrome.storage.local.get([responseCacheKey]);
 
   if (data[responseCacheKey]) {
     responseCache = new Map(Object.entries(data[responseCacheKey]));
@@ -53,7 +53,7 @@ async function storeStorageCache() {
   object[responseCacheKey] = Object.fromEntries(responseCache);
 
   try {
-    await browser.storage.local.set(object);
+    await chrome.storage.local.set(object);
   } catch (e) {
     console.error("Failed to store data:", e);
   }
@@ -99,7 +99,6 @@ async function fetchAllScore(elements, force = false) {
           if (force) {
             if (responseCache.has(task)) {
               responseCache.delete(task);
-              // console.log(`Cache invalidated for: ${task}`);
             }
           }
           promises.push(fetchAndParseTask(url, task));
@@ -179,10 +178,8 @@ async function refreshScores(force = true) {
 
 async function refreshSingleTask(url, task) {
   if (!url) return;
-  // console.log(`Refreshing task at URL: ${url}`);
   if (responseCache.has(task)) {
     responseCache.delete(task);
-    //   console.log(`Cache invalidated for: ${task}`);
   }
   const elements = document.querySelectorAll(".nav-list li");
   const taskElement = Array.from(elements).find((element, i) => {
@@ -247,10 +244,8 @@ function createControls() {
 
 function setupSubmissionListener() {
   if (window.location.href.includes("/tasks/")) {
-    // console.log('Setting up submission listener');
     document.addEventListener("submit", async (event) => {
       if (event.target.matches("form")) {
-        // console.log('Form submission detected');
         setTimeout(
           () =>
             withButtonDisabled(async () => {
@@ -302,7 +297,6 @@ function setupSubmissionListener() {
         if (shouldRefresh) break;
       }
       if (shouldRefresh) {
-        // console.log('Score update detected by observer');
         setTimeout(() =>
           withButtonDisabled(async () => {
             const url = window.location.href.split("?")[0];
@@ -321,13 +315,11 @@ function setupSubmissionListener() {
           subtree: true,
           characterData: true,
         });
-        // console.log('Observer attached to score container');
       }
     }, 1000);
   }
 }
 
-// --- TOI Pre‑TOI overview box) ---
 function parseScore(scoreText) {
   const match = scoreText.match(/(\d+)\s*\/\s*(\d+)/);
   if (!match) return 0;
@@ -383,17 +375,91 @@ function insertScoreBoxTOI() {
     overviewHeader.parentElement.insertBefore(box, overviewHeader.nextSibling);
   }
 }
-if (
-  window.location.href.startsWith(
-    "https://toi-coding.informatics.buu.ac.th/00-pre-toi"
-  )
-) {
-  window.addEventListener("load", () => setTimeout(insertScoreBoxTOI, 500));
+
+function addDownloadColumn() {
+    const table = document.querySelector("table");
+    if (!table) return;
+    const headerRow = table.querySelector("thead tr");
+    if (headerRow) {
+        const thDownload = document.createElement("th");
+        thDownload.textContent = "Download";
+        headerRow.appendChild(thDownload);
+        const thSubmission = document.createElement("th");
+        thSubmission.textContent = "Submission";
+        headerRow.appendChild(thSubmission);
+    }
+    const rows = table.querySelectorAll("tbody tr");
+    rows.forEach(row => {
+        const taskCell = row.children[1];
+        if (!taskCell) return;
+        const taskId = taskCell.textContent.trim();
+        const downloadLink = `/00-pre-toi/tasks/${taskId}/statements/TH`;
+        const submissionLink = `/00-pre-toi/tasks/${taskId}/submissions`;
+        const tdD = document.createElement("td");
+        const aD = document.createElement("a");
+        aD.textContent = "PDF";
+        aD.href = downloadLink;
+        aD.target = "_blank";
+        styleButton(aD, "#2196F3");
+        tdD.style.textAlign = "center"; tdD.style.verticalAlign = "middle";
+        tdD.appendChild(aD);
+        row.appendChild(tdD);
+        const tdS = document.createElement("td");
+        const aS = document.createElement("a");
+        aS.textContent = "ส่ง code";
+        aS.href = submissionLink;
+        aS.target = "_blank";
+        styleButton(aS, "#4CAF50");
+        tdS.style.textAlign = "center"; tdS.style.verticalAlign = "middle";
+        tdS.appendChild(aS);
+        row.appendChild(tdS);
+    });
 }
+
+function styleButton(btn, bgColor) {
+    btn.style.padding = "6px 10px";
+    btn.style.backgroundColor = bgColor;
+    btn.style.color = "white";
+    btn.style.textDecoration = "none";
+    btn.style.borderRadius = "4px";
+    btn.style.fontSize = "14px";
+}
+
+function applyGroupedRowStyles() {
+    const rows = document.querySelectorAll("table tbody tr");
+    const groups = { A1: [], A2: [], A3: [] };
+    rows.forEach(r => {
+        const taskCell = r.children[1];
+        if (!taskCell) return;
+        const grp = taskCell.textContent.trim().split("-")[0];
+        if (groups[grp]) groups[grp].push(r);
+    });
+    const colors = { A1: "#f9f9f9", A2: "#e6f3ff", A3: "#fff2e6" };
+    Object.entries(groups).forEach(([grp, arr]) => {
+        arr.forEach((r, i) => {
+            r.style.backgroundColor = i % 2 === 0 ? "#ffffff" : colors[grp];
+        });
+    });
+}
+
+function isMainPage() {
+    return window.location.href === "https://toi-coding.informatics.buu.ac.th/00-pre-toi";
+}
+function isSubmissionPage() {
+    const u = window.location.href;
+    return u.includes("/tasks/") && u.includes("/submissions");
+}
+
+window.addEventListener("load", () => {
+    if (isMainPage() && !isSubmissionPage()) {
+        addDownloadColumn();
+    }
+    applyGroupedRowStyles();
+    setTimeout(insertScoreBoxTOI, 500);
+});
 
 (async function () {
   if (!isCMSPage()) {
-    // console.log("Not a CMS page, CMS extension has been disabled");
     return;
   }
   if (!user) return;
@@ -426,9 +492,12 @@ function updateSidebarElement(element) {
 
     const currentScore = score.get(task);
     const currentFullScore = fullScore.get(task);
+
     element.textContent = "";
+
     const taskSpan = document.createElement("span");
     taskSpan.textContent = task;
+
     const scoreContainer = document.createElement("span");
     scoreContainer.style.float = "right";
 
@@ -443,6 +512,7 @@ function updateSidebarElement(element) {
     scoreBadge.textContent = `${currentScore} / ${currentFullScore}`;
 
     scoreContainer.appendChild(scoreBadge);
+
     element.appendChild(taskSpan);
     element.appendChild(scoreContainer);
   } catch (e) {
