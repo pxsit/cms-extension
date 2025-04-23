@@ -344,25 +344,38 @@ function analyzeTasks() {
 }
 
 function createScoreBox(a1, a2, a3) {
-  const container = document.createElement("div");
-  container.style.padding = "12px";
-  container.style.marginBottom = "20px";
-  container.style.fontSize = "16px";
-  container.style.fontWeight = "bold";
-  container.style.backgroundColor = "#fff";
-  container.style.color = "#000";
-  container.style.width = "100%";
-  const totalA2A3 = a2 + a3;
-  const totalAll = a1 + totalA2A3;
-  container.innerHTML = `
-  A1: ${a1} ข้อ<br> 
-  A2: ${a2} ข้อ<br> 
-  A3: ${a3} ข้อ<br> 
-  ${totalAll >= 40 ? '✅' : '❌'} รวมทกข้อ : ${totalAll} ข้อ <br>
-  ${totalA2A3 >= 20 ? '✅' : '❌'} รวม A2+A3 : ${totalA2A3} ข้อ <br>
-  ${(totalAll >= 40 && totalA2A3 >= 20)? '✅<span style="color: green;"> ผ่านเกณฑ์</span>' : '❌<span style="color: red;"> ไม่ผ่านเกณฑ์</span>'}<br>
-  `;
-  return container;
+    const container = document.createElement("div");
+    container.style.padding = "12px";
+    container.style.marginBottom = "20px";
+    container.style.fontSize = "16px";
+    container.style.fontWeight = "bold";
+    container.style.backgroundColor = "#fff";
+    container.style.color = "#000";
+    container.style.width = "100%";
+
+    const totalA2A3 = a2 + a3;
+    const totalAll = a1 + totalA2A3;
+
+    function appendLine(text, color) {
+        const p = document.createElement("p");
+        p.textContent = text;
+        if (color) p.style.color = color;
+        container.appendChild(p);
+    }
+
+    appendLine(`A1: ${a1} ข้อ`);
+    appendLine(`A2: ${a2} ข้อ`);
+    appendLine(`A3: ${a3} ข้อ`);
+    appendLine(`${totalAll >= 40 ? '✅' : '❌'} รวมทกข้อ : ${totalAll} ข้อ`);
+    appendLine(`${totalA2A3 >= 20 ? '✅' : '❌'} รวม A2+A3 : ${totalA2A3} ข้อ`);
+
+    if (totalAll >= 40 && totalA2A3 >= 20) {
+        appendLine('✅ ผ่านเกณฑ์', 'green');
+    } else {
+        appendLine('❌ ไม่ผ่านเกณฑ์', 'red');
+    }
+
+    return container;
 }
 
 function insertScoreBoxTOI() {
