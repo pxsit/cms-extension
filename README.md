@@ -8,7 +8,7 @@ Extension for CMS grader.
 
 # How to install
 ## Chrome
-1. Clone this repository (or just click [here](https://github.com/ttamx/cms-extension/archive/refs/heads/main.zip) and unzip).
+1. Clone this repository (or just click [here](https://github.com/pxsit/cms-extension/archive/refs/heads/main.zip) and unzip).
 2. Go to `chrome://extensions/` (You can copy and paste this link in your browser).
 3. Enable developer mode on the top right corner.
 4. Click Load unpacked and select the `Chrome` folder.
