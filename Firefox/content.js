@@ -414,18 +414,25 @@ function createScoreBox(a1, a2, a3) {
     rightDiv.appendChild(makeRow(null, `ระดับ A1 ทำได้ ${a1} ข้อ`));
     rightDiv.appendChild(makeRow(null, `ระดับ A2 ทำได้ ${a2} ข้อ`));
     rightDiv.appendChild(makeRow(null, `ระดับ A3 ทำได้ ${a3} ข้อ`));
-    rightDiv.appendChild(
-        makeRow(
-            null,
-            `${totalAll >= 40 ? "✅ " : "❌ "}รวมทั้งหมด ทำได้ ${totalAll} ข้อ${totalAll >= 40 ? "" : `<span style="color:red;">ยังขาดอีก ${40 - totalAll} ข้อ</span>`}`
-        )
-    );
-    rightDiv.appendChild(
-        makeRow(
-            null,
-            `${totalA2A3 >= 20 ? "✅ " : "❌ "}ระดับ A2+A3 ทำได้ ${totalA2A3} ข้อ${totalA2A3 >= 20 ? "" : `<span style="color:red;">ยังขาดอีก ${20 - totalA2A3} ข้อ</span>`}`
-        )
-    );
+
+    const rowTotal = makeRow(null, `${totalAll >= 40 ? "✅ " : "❌ "}รวมทั้งหมด ทำได้ ${totalAll} ข้อ`);
+    if (totalAll < 40) {
+      const span = document.createElement("span");
+      span.style.color = "red";
+      span.textContent = `ยังขาดอีก ${40 - totalAll} ข้อ`;
+      rowTotal.lastChild.appendChild(span);
+    }
+    rightDiv.appendChild(rowTotal);
+
+    const rowA2A3 = makeRow(null, `${totalA2A3 >= 20 ? "✅ " : "❌ "}ระดับ A2+A3 ทำได้ ${totalA2A3} ข้อ`);
+    if (totalA2A3 < 20) {
+      const span2 = document.createElement("span");
+      span2.style.color = "red";
+      span2.textContent = `ยังขาดอีก ${20 - totalA2A3} ข้อ`;
+      rowA2A3.lastChild.appendChild(span2);
+    }
+    rightDiv.appendChild(rowA2A3);
+
     container.append(headerDiv, rightDiv);
     return container;
 }

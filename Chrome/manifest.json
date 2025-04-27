@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CMS Extension",
-  "version": "1.4",
+  "version": "1.5",
   "description": "Extension for CMS grader and Show summary of A1, A2, A3 passed tasks and standard check for TOI preparation site.",
   "permissions": ["activeTab", "storage"],
   "action": {
