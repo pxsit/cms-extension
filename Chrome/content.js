@@ -355,26 +355,78 @@ function createScoreBox(a1, a2, a3) {
 
     const totalA2A3 = a2 + a3;
     const totalAll = a1 + totalA2A3;
-
-    function appendLine(text, color) {
-        const p = document.createElement("p");
-        p.textContent = text;
-        if (color) p.style.color = color;
-        container.appendChild(p);
-    }
-
-    appendLine(`A1: ${a1} ข้อ`);
-    appendLine(`A2: ${a2} ข้อ`);
-    appendLine(`A3: ${a3} ข้อ`);
-    appendLine(`${totalAll >= 40 ? '✅' : '❌'} รวมทกข้อ : ${totalAll} ข้อ`);
-    appendLine(`${totalA2A3 >= 20 ? '✅' : '❌'} รวม A2+A3 : ${totalA2A3} ข้อ`);
-
-    if (totalAll >= 40 && totalA2A3 >= 20) {
-        appendLine('✅ ผ่านเกณฑ์', 'green');
+    const passed = totalAll >= 40 && totalA2A3 >= 20;
+    let bg;
+    if (passed) {
+        container.style.border = "3px solid green";
+        bg = "#33cc66";
     } else {
-        appendLine('❌ ไม่ผ่านเกณฑ์', 'red');
+        container.style.border = "3px solid red";
+        bg = "#fe4141";
     }
 
+    const headerDiv = document.createElement("div");
+    Object.assign(headerDiv.style, {
+        backgroundColor: bg,
+        color: "white",
+        textAlign: "center",
+        padding: "30px 20px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center"
+    });
+    const statusIcon = document.createElement("div");
+    statusIcon.style.fontSize = "30px";
+    statusIcon.textContent = passed ? "✅" : "❌";
+    const statusText = document.createElement("div");
+    statusText.style.fontSize = "22px";
+    statusText.style.fontWeight = "bold";
+    statusText.textContent = passed ? "ผ่านเกณฑ์" : "ยังไม่ผ่าน";
+    headerDiv.append(statusIcon, statusText);
+
+    const rightDiv = document.createElement("div");
+    Object.assign(rightDiv.style, {
+        backgroundColor: "white",
+        padding: "20px",
+        flex: "1"
+    });
+
+    function makeRow(icon, textContent) {
+        const row = document.createElement("div");
+        row.className = "d-flex align-items-start mb-3";
+        if (icon) {
+            const iconDiv = document.createElement("div");
+            Object.assign(iconDiv.style, {
+                fontSize: "20px",
+                color: "red",
+                marginRight: "10px"
+            });
+            iconDiv.textContent = icon;
+            row.appendChild(iconDiv);
+        }
+        const txt = document.createElement("div");
+        txt.style.fontWeight = "bold";
+        txt.innerHTML = textContent;
+        row.appendChild(txt);
+        return row;
+    }
+    rightDiv.appendChild(makeRow(null, `ระดับ A1 ทำได้ ${a1} ข้อ`));
+    rightDiv.appendChild(makeRow(null, `ระดับ A2 ทำได้ ${a2} ข้อ`));
+    rightDiv.appendChild(makeRow(null, `ระดับ A3 ทำได้ ${a3} ข้อ`));
+    rightDiv.appendChild(
+        makeRow(
+            null,
+            `${totalAll >= 40 ? "✅ " : "❌ "}รวมทั้งหมด ทำได้ ${totalAll} ข้อ${totalAll >= 40 ? "" : `<span style="color:red;">ยังขาดอีก ${40 - totalAll} ข้อ</span>`}`
+        )
+    );
+    rightDiv.appendChild(
+        makeRow(
+            null,
+            `${totalA2A3 >= 20 ? "✅ " : "❌ "}ระดับ A2+A3 ทำได้ ${totalA2A3} ข้อ${totalA2A3 >= 20 ? "" : `<span style="color:red;">ยังขาดอีก ${20 - totalA2A3} ข้อ</span>`}`
+        )
+    );
+    container.append(headerDiv, rightDiv);
     return container;
 }
 
@@ -402,7 +454,7 @@ function addDownloadColumn() {
         headerRow.appendChild(thSubmission);
     }
     const rows = table.querySelectorAll("tbody tr");
-    rows.forEach(row => {
+    rows.forEach((row) => {
         const taskCell = row.children[1];
         if (!taskCell) return;
         const taskId = taskCell.textContent.trim();
@@ -414,7 +466,8 @@ function addDownloadColumn() {
         aD.href = downloadLink;
         aD.target = "_blank";
         styleButton(aD, "#2196F3");
-        tdD.style.textAlign = "center"; tdD.style.verticalAlign = "middle";
+        tdD.style.textAlign = "center";
+        tdD.style.verticalAlign = "middle";
         tdD.appendChild(aD);
         row.appendChild(tdD);
         const tdS = document.createElement("td");
@@ -423,7 +476,8 @@ function addDownloadColumn() {
         aS.href = submissionLink;
         aS.target = "_blank";
         styleButton(aS, "#4CAF50");
-        tdS.style.textAlign = "center"; tdS.style.verticalAlign = "middle";
+        tdS.style.textAlign = "center";
+        tdS.style.verticalAlign = "middle";
         tdS.appendChild(aS);
         row.appendChild(tdS);
     });
@@ -441,7 +495,7 @@ function styleButton(btn, bgColor) {
 function applyGroupedRowStyles() {
     const rows = document.querySelectorAll("table tbody tr");
     const groups = { A1: [], A2: [], A3: [] };
-    rows.forEach(r => {
+    rows.forEach((r) => {
         const taskCell = r.children[1];
         if (!taskCell) return;
         const grp = taskCell.textContent.trim().split("-")[0];
