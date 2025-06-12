@@ -1,19 +1,27 @@
 {
   "manifest_version": 3,
   "name": "CMS Extension",
-  "version": "1.5",
-  "description": "Extension for CMS grader and Show summary of A1, A2, A3 passed tasks and standard check for TOI preparation site.",
+  "version": "2.0.1",
+  "homepage_url": "https://github.com/pxsit/cms-extension",
+  "description": "Extension for CMS grader",
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
   "permissions": ["activeTab", "storage"],
+  "host_permissions": ["<all_urls>"],
   "action": {
-    "default_icon": "icon.png"
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
   },
   "content_scripts": [
     {
       "css": ["style.css"],
-      "matches": [
-        "https://c2.thailandoi.org/*",
-        "https://toi-coding.informatics.buu.ac.th/*"
-      ],
+      "matches": ["<all_urls>"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }

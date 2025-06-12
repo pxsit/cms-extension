@@ -4,21 +4,17 @@ Extension for CMS grader.
 
 # Preview
 
-![image](https://github.com/user-attachments/assets/bfa0f0a8-f303-4cc8-b3c1-8487e14935e3)
+![image](https://github.com/user-attachments/assets/549106f7-dd68-46ff-8129-9815593923e3)
 
 # How to install
 ## Chrome
-1. Clone this repository (or just click [here](https://github.com/pxsit/cms-extension/archive/refs/heads/main.zip) and unzip).
+1. Clone this repository (or just click [here](https://github.com/ttamx/cms-extension/archive/refs/heads/main.zip) and unzip).
 2. Go to `chrome://extensions/` (You can copy and paste this link in your browser).
 3. Enable developer mode on the top right corner.
 4. Click Load unpacked and select the `Chrome` folder.
 5. Done!
 ## Firefox
-1. Install the extention from [The Firefox Marketplace](https://addons.mozilla.org/en-US/firefox/addon/cms-extension/)
-2. Done!
+1. Go to the official extension page https://addons.mozilla.org/en-US/firefox/addon/cms-extension/
+2. Click Add to Firefox
+3. Done!
 > 
-
-# Credit
-1. Teetat Thamronglak - For starting this project. 
-2. Pasit Sangprachathanarak - For the total score counter and request optimization.
-3. Arnan Maipradit - For the counter on the home page and for the pdf download and submission button.
