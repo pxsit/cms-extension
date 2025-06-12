@@ -15,7 +15,7 @@ Extension for CMS grader.
 4. Click Load unpacked and select the `Chrome` folder.
 5. Done!
 ## Firefox
-1. Go to the official extension page https://addons.mozilla.org/en-US/firefox/addon/cms-extension/
+1. Visit the official extension page https://addons.mozilla.org/en-US/firefox/addon/cms-extension/
 2. Click Add to Firefox
 3. Done!
 > 
