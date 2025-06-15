@@ -13,7 +13,9 @@ const user = document.querySelector("em")?.textContent;
 function isCMSPage() {
     const hasCMSHeader = !!document.querySelector(".navbar");
     const hasUserElement = !!document.querySelector("em");
-    return hasCMSHeader && hasUserElement;
+    // Fix Me : Add urlPattern
+    // const urlPattern = /\/(description|submissions|communication|documentation|testing)(\/|$)/;
+    return hasCMSHeader && hasUserElement && haveNavList;
 }
 
 const parser = new DOMParser();
